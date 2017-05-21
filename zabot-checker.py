@@ -6,6 +6,10 @@ from pyparsing import *
 file = sys.argv[1]
 m = int(sys.argv[2])
 n = int(sys.argv[3])
+all_again = False
+if len(sys.argv) > 4:
+    if sys.argv[4] == "-a":
+        all_again = True
 
 rus_alphas = 'йцукенгшщзхъфывапролджэячсмитьбюЙЦУКЕНГШЩЗХЪФЫВАПРОЛДЖЭЯЧСМИТЬБЮ'
 
@@ -32,7 +36,7 @@ for x in f[1:]:
         if questions.get(active_section, 0) == 0:
             questions[active_section] = []
         mark = res.mark
-        if len(mark) == 0: 
+        if (len(mark) == 0) | (all_again): 
             mark = "LEARN "
         #if mark != "LEARNED": 
         questions[active_section].append({"question": res.question.strip(), "mark":mark})
