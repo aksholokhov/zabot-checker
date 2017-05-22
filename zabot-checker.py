@@ -17,7 +17,8 @@ question = Word(rus_alphas + alphas,  alphas + rus_alphas + " .,+-:" + nums)('qu
 stars = (OneOrMore("*"))('stars')
 mark = (Word("LEARNED ") | Word("LEARN "))('mark')
 progress = Word("[", "/"+ nums + "]")
-line = stars + Optional(mark) + question + Optional(progress)
+text = Word(rus_alphas + alphas + nums, alphas + rus_alphas + " .,+-:=><" + nums)('text')
+line = (stars + Optional(mark) + question + Optional(progress)) | text
 
 with open(file, "r") as o:
     f = o.readlines()
@@ -29,6 +30,10 @@ active_num = 1;
 
 for x in f[1:]:
     res = line.parseString(x)
+    
+    if res.get("text", "*") != "*":
+        continue
+
     if len(res.stars) == 1:
         active_section = ("[%03d]")%(active_num) + res.question.strip()
         active_num += 1;
