@@ -4,47 +4,75 @@ import numpy as np
 from pyparsing import *
 
 file = sys.argv[1]
-m = int(sys.argv[2])
-n = int(sys.argv[3])
 all_again = False
+
 if len(sys.argv) > 4:
     if sys.argv[4] == "-a":
         all_again = True
+with open(file, "r") as o:
+    f = o.readlines()
+
+from itertools import chain
+
+letters = set()
+for line in f:
+    letters.update(set(line))
+#letters.remove("*")
+letters.remove("[")
+letters.remove("]")
+letters = "".join(sorted(letters))
 
 rus_alphas = 'йцукенгшщзхъфывапролджэячсмитьбюЙЦУКЕНГШЩЗХЪФЫВАПРОЛДЖЭЯЧСМИТЬБЮ'
 
-question = Word(rus_alphas + alphas,  alphas + rus_alphas + " .,+-:" + nums)('question')
+question = Word(letters,  letters)('question')
 stars = (OneOrMore("*"))('stars')
 mark = (Word("LEARNED ") | Word("LEARN "))('mark')
 progress = Word("[", "/"+ nums + "]")
-text = Word(rus_alphas + alphas + nums, alphas + rus_alphas + " .,+-:=><" + nums)('text')
-line = (stars + Optional(mark) + question + Optional(progress)) | text
-
-with open(file, "r") as o:
-    f = o.readlines()
+text = Word(letters, letters)('text')
+line = (stars + Optional(mark) + question + Optional(progress)) | text    
     
 questions = {}
 marks = [x.strip() for x in f[0].strip().split(":")[1].split("|")]
 active_section = "root"
 active_num = 1;
-
-for x in f[1:]:
+text = []
+active_section = None
+current_topic = None
+for n, x in enumerate(f[1:]):
     res = line.parseString(x)
-    
     if res.get("text", "*") != "*":
+        text.append(res.get("text"))
+        if n == len(f) - 2:
+            current_topic["text"] = text
+            questions[active_section].append(current_topic)
         continue
-
     if len(res.stars) == 1:
+        if (current_topic != None):
+            current_topic["text"] = text
+            questions[active_section].append(current_topic)
+        current_topic = None
+        text = []
         active_section = ("[%03d]")%(active_num) + res.question.strip()
         active_num += 1;
     else:
+        if (current_topic != None):
+            current_topic["text"] = text
+            questions[active_section].append(current_topic)
+            current_topic = None
+            text = []
+            
         if questions.get(active_section, 0) == 0:
             questions[active_section] = []
+        
         mark = res.mark
-        if (len(mark) == 0) | (all_again): 
+        if len(mark) == 0: 
             mark = "LEARN "
-        #if mark != "LEARNED": 
-        questions[active_section].append({"question": res.question.strip(), "mark":mark})
+
+        current_topic = {"question": res.question.strip(), "mark":mark}
+
+
+m = int(sys.argv[2])
+n = int(sys.argv[3])
 
 while(True):
     themes = np.random.permutation(list(questions.keys()))[:m]
@@ -58,7 +86,6 @@ while(True):
     if len(asked) == 0:
         print("finished!\n")
         break
-
     curr_theme = ""
     for q in asked:
         if curr_theme != q["t"]:
@@ -75,7 +102,7 @@ while(True):
         marks = input()
         
     for mark, q in zip(marks, asked):
-        q["q"]["mark"] = "LEARNED " if mark == "+" else "LEARN "     
+        q["q"]["mark"] = "LEARNED " if mark == "+" else "LEARN "      
 
 with open(file, "w") as o:
     o.write(f[0])
@@ -86,3 +113,5 @@ with open(file, "w") as o:
         o.write("* " + theme.split("]")[1].strip() + " [" + str(c) +"/" + str(len(qs)) + "]\n")
         for q in qs:
             o.write("** " + q["mark"].strip() + " " + q["question"].strip() + "\n")
+            for line in q["text"]:
+                o.write(line)
