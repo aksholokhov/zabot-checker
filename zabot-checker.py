@@ -2,6 +2,7 @@ import sys
 from operator import itemgetter
 import numpy as np
 from pyparsing import *
+from termcolor import colored
 
 file = sys.argv[1]
 all_again = False
@@ -90,8 +91,8 @@ while(True):
     for q in asked:
         if curr_theme != q["t"]:
             curr_theme = q["t"];
-            print(curr_theme + ":")
-        print("  * " + q["q"]["question"]) 
+            print(colored(curr_theme + ":", "cyan"))
+        print(colored("  * " + q["q"]["question"], "green"))
         
     marks = input()
     if (marks == "end"):
